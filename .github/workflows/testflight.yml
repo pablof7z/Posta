@@ -2,16 +2,9 @@ name: Deploy to TestFlight
 
 on:
   push:
-    branches:
-      - main
     tags:
-      - 'v*'
+      - "v*"
   workflow_dispatch:
-    inputs:
-      version_bump:
-        description: 'Version bump type (patch, minor, major)'
-        required: false
-        default: 'patch'
 
 jobs:
   deploy:
@@ -31,18 +24,18 @@ jobs:
     
     - name: Setup API Key
       env:
-        APP_STORE_CONNECT_API_KEY_BASE64: ${{ secrets.APP_STORE_CONNECT_API_KEY_BASE64 }}
+        APP_STORE_CONNECT_API_KEY: ${{ secrets.APP_STORE_CONNECT_API_KEY }}
       run: |
         mkdir -p ~/.appstoreconnect/private_keys
-        echo "$APP_STORE_CONNECT_API_KEY_BASE64" | base64 --decode > ~/.appstoreconnect/private_keys/AuthKey_6VZ4NHWMQN.p8
+        echo "$APP_STORE_CONNECT_API_KEY" > ~/.appstoreconnect/private_keys/AuthKey_${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}.p8
     
     - name: Generate Xcode project
       run: ./refresh-project.sh
     
     - name: Build and deploy
       env:
-        API_KEY_ID: ${{ secrets.APP_STORE_API_KEY_ID }}
-        API_ISSUER_ID: ${{ secrets.APP_STORE_API_ISSUER_ID }}
+        API_KEY_ID: ${{ secrets.APP_STORE_CONNECT_API_KEY_ID }}
+        API_ISSUER_ID: ${{ secrets.APP_STORE_CONNECT_ISSUER_ID }}
       run: |
         xcodebuild archive \
           -project Posta.xcodeproj \
@@ -51,7 +44,7 @@ jobs:
           -archivePath build/Posta.xcarchive \
           -destination "generic/platform=iOS" \
           CODE_SIGN_STYLE=Automatic \
-          DEVELOPMENT_TEAM="6VZ4NHWMQN" \
+          DEVELOPMENT_TEAM="${{ secrets.DEVELOPMENT_TEAM }}" \
           | xcbeautify
         
         xcodebuild -exportArchive \
