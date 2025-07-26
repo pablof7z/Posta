@@ -5,13 +5,13 @@
     <key>destination</key>
     <string>export</string>
     <key>method</key>
-    <string>app-store</string>
+    <string>app-store-connect</string>
     <key>signingStyle</key>
     <string>automatic</string>
     <key>stripSwiftSymbols</key>
     <true/>
     <key>teamID</key>
-    <string>456SHKPP26</string>
+    <string>6VZ4NHWMQN</string>
     <key>uploadBitcode</key>
     <false/>
     <key>uploadSymbols</key>
