@@ -1,9 +1,19 @@
 import SwiftUI
 import NDKSwift
 
+enum ComposeError: LocalizedError {
+    case signerRequired
+    
+    var errorDescription: String? {
+        switch self {
+        case .signerRequired:
+            return "No signer available. Please sign in to publish notes."
+        }
+    }
+}
+
 struct ComposeView: View {
     @Environment(\.dismiss) var dismiss
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
     
     @State private var content = ""
@@ -152,9 +162,10 @@ struct ComposeView: View {
     }
     
     private func publishNote() async {
-        guard let ndk = ndkManager.ndk,
+        let ndk = ndkManager.ndk
+        guard let authManager = ndkManager.authManager,
               let signer = authManager.activeSigner else {
-            publishError = NostrError.signerRequired
+            publishError = ComposeError.signerRequired
             return
         }
         
@@ -201,7 +212,7 @@ struct ComposeView: View {
     }
     
     private func monitorConfirmationState(eventId: String) async {
-        guard let cache = ndkManager.ndk?.cache else { return }
+        let cache = ndkManager.ndk.cache
         
         // Monitor confirmation state changes
         while !Task.isCancelled {
@@ -229,6 +240,5 @@ struct ComposeView: View {
 
 #Preview {
     ComposeView()
-        .environment(NDKAuthManager.shared)
         .environment(NDKManager.shared)
 }

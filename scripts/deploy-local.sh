@@ -46,6 +46,7 @@ xcodebuild archive \
     -destination "generic/platform=iOS" \
     CODE_SIGN_STYLE=Automatic \
     DEVELOPMENT_TEAM="6VZ4NHWMQN" \
+    -allowProvisioningUpdates \
     -quiet
 
 if [ $? -ne 0 ]; then
@@ -61,6 +62,7 @@ xcodebuild -exportArchive \
     -archivePath build/Posta.xcarchive \
     -exportPath build \
     -exportOptionsPlist ExportOptions-TestFlight.plist \
+    -allowProvisioningUpdates \
     -quiet
 
 if [ $? -ne 0 ]; then

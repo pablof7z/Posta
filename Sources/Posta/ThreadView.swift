@@ -12,7 +12,7 @@ struct ThreadView: View {
     @State private var replyingTo: NDKEvent?
     @State private var replyText: String = ""
     @State private var isLoadingReplies = true
-    @State private var threadDataSource: NDKDataSource<NDKEvent>?
+    @State private var threadDataSource: NDKSubscription<NDKEvent>?
     @State private var subscriptionTask: Task<Void, Never>?
     @State private var selectedProfile: String?
     @State private var subThreads: [String: [NDKEvent]] = [:] // eventId -> replies
@@ -142,12 +142,12 @@ struct ThreadView: View {
             // Reply target indicator with animation
             if let target = replyingTo {
                 HStack {
-                    ProfileLoader(pubkey: target.pubkey) { profile in
+                    ProfileLoader(pubkey: target.pubkey) { metadata in
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.turn.up.right")
                                 .font(.system(size: 12))
                                 .foregroundColor(.purple)
-                            Text("Replying to \(profile?.displayName ?? "Unknown")")
+                            Text("Replying to \(metadata?.displayName ?? "Unknown")")
                                 .font(.system(size: 14, weight: .medium))
                                 .foregroundColor(.primary)
                         }
@@ -232,7 +232,7 @@ struct ThreadView: View {
     }
     
     private func loadThread() {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         // Subscribe to replies
         subscriptionTask = Task {
@@ -241,7 +241,7 @@ struct ThreadView: View {
                 tags: ["e": Set([rootEvent.id])]
             )
             
-            threadDataSource = ndk.observe(filter: replyFilter)
+            threadDataSource = ndk.subscribe(filter: replyFilter)
             
             guard let dataSource = threadDataSource else { return }
             
@@ -263,7 +263,7 @@ struct ThreadView: View {
         }
     }
     private func loadSubReplies(for eventId: String) {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         Task {
             let subReplyFilter = NDKFilter(
@@ -272,7 +272,7 @@ struct ThreadView: View {
             )
             
             // Use observe with maxAge > 0 to fetch and close after EOSE
-            let dataSource = ndk.observe(filter: subReplyFilter, maxAge: 60)
+            let dataSource = ndk.subscribe(filter: subReplyFilter, maxAge: 60)
             var events: [NDKEvent] = []
             
             for await event in dataSource.events {
@@ -298,8 +298,8 @@ struct ThreadView: View {
     }
     
     private func sendReply() {
-        guard let ndk = ndkManager.ndk,
-              let signer = authManager.activeSigner,
+        let ndk = ndkManager.ndk
+        guard let signer = authManager.activeSigner,
               !replyText.isEmpty else { return }
         
         Task {
@@ -329,7 +329,7 @@ struct ThreadView: View {
                     .tags(tags)
                     .build(signer: signer)
                 
-                try await ndk.publish(replyEvent)
+                _ = try await ndk.publish(replyEvent)
                 
                 await MainActor.run {
                     replyText = ""
@@ -350,7 +350,7 @@ struct ThreadEventView: View {
     @Environment(NDKManager.self) var ndkManager
     
     var body: some View {
-        ProfileLoader(pubkey: event.pubkey) { profile in
+        ProfileLoader(pubkey: event.pubkey) { metadata in
             VStack(alignment: .leading, spacing: 12) {
                 // Author info
                 HStack(alignment: .top, spacing: 12) {
@@ -360,9 +360,9 @@ struct ThreadEventView: View {
                         HapticFeedback.impact(.light)
                     }) {
                         EnhancedAvatarView(
-                            url: profile?.picture.flatMap { URL(string: $0) },
+                            url: metadata?.picture.flatMap { URL(string: $0) },
                             size: 52,
-                            fallbackText: String(profile?.name?.prefix(1) ?? "?").uppercased(),
+                            fallbackText: String(metadata?.name?.prefix(1) ?? "?").uppercased(),
                             showOnlineIndicator: false
                         )
                     }
@@ -370,7 +370,7 @@ struct ThreadEventView: View {
                     
                     // Name and time
                     VStack(alignment: .leading, spacing: 2) {
-                        Text(profile?.displayName ?? profile?.name ?? "Unknown")
+                        Text(metadata?.displayName ?? metadata?.name ?? "Unknown")
                             .font(.system(size: 16, weight: .semibold))
                         
                         Text(event.createdAt.formatted)
@@ -382,11 +382,7 @@ struct ThreadEventView: View {
                 }
                 
                 // Content with enhanced typography
-                RichTextView(
-                    content: event.content,
-                    tags: event.tags,
-                    currentUser: nil
-                )
+                RichTextView(content: event.content)
                 .font(.system(size: isRoot ? 16 : 15))
                 .textSelection(.enabled)
                 
@@ -458,7 +454,7 @@ struct ThreadReplyView: View {
     @State private var isPressed = false
     
     var body: some View {
-        ProfileLoader(pubkey: event.pubkey) { profile in
+        ProfileLoader(pubkey: event.pubkey) { metadata in
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 12) {
                     // Thread line and avatar
@@ -468,9 +464,9 @@ struct ThreadReplyView: View {
                             HapticFeedback.impact(.light)
                         }) {
                             EnhancedAvatarView(
-                                url: profile?.picture.flatMap { URL(string: $0) },
+                                url: metadata?.picture.flatMap { URL(string: $0) },
                                 size: 40,
-                                fallbackText: String(profile?.name?.prefix(1) ?? "?").uppercased(),
+                                fallbackText: String(metadata?.name?.prefix(1) ?? "?").uppercased(),
                                 showOnlineIndicator: false
                             )
                         }
@@ -489,7 +485,7 @@ struct ThreadReplyView: View {
                     // Content
                     VStack(alignment: .leading, spacing: 6) {
                         HStack {
-                            Text(profile?.displayName ?? profile?.name ?? "Unknown")
+                            Text(metadata?.displayName ?? metadata?.name ?? "Unknown")
                                 .font(.system(size: 15, weight: .medium))
                             
                             Text("·")
@@ -502,11 +498,7 @@ struct ThreadReplyView: View {
                             Spacer()
                         }
                         
-                        RichTextView(
-                            content: event.content,
-                            tags: event.tags,
-                            currentUser: nil
-                        )
+                        RichTextView(content: event.content)
                         .font(.system(size: 15))
                         .foregroundColor(.primary.opacity(0.9))
                     
@@ -577,12 +569,12 @@ struct MiniAvatar: View {
     let pubkey: String
     
     @Environment(NDKManager.self) var ndkManager
-    @State private var profile: NDKUserProfile?
+    @State private var metadata: NDKUserMetadata?
     @State private var profileTask: Task<Void, Never>?
     
     var body: some View {
         Group {
-            if let avatarURL = profile?.picture, let url = URL(string: avatarURL) {
+            if let avatarURL = metadata?.picture, let url = URL(string: avatarURL) {
                 AsyncImage(url: url) { image in
                     image
                         .resizable()
@@ -616,15 +608,15 @@ struct MiniAvatar: View {
     }
     
     private func loadProfile() {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         profileTask = Task {
-            let profileStream = await ndk.profileManager.observe(for: pubkey, maxAge: TimeConstants.hour)
+            let profileStream = await ndk.profileManager.subscribe(for: pubkey, maxAge: TimeConstants.hour)
             
-            for await profile in profileStream {
-                if let profile = profile {
+            for await metadata in profileStream {
+                if let metadata = metadata {
                     await MainActor.run {
-                        self.profile = profile
+                        self.metadata = metadata
                     }
                     break
                 }

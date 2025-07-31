@@ -67,17 +67,16 @@ struct HomeView: View {
         }
         .onAppear {
             print("📦 [HomeView] onAppear called")
-            print("📦 [HomeView] ndkManager.ndk = \(ndkManager.ndk != nil ? "Available" : "NIL")")
+            print("📦 [HomeView] ndkManager.ndk = Available")
             
             // Always show content immediately - no loading states
             showContent = true
             
-            if let ndk = ndkManager.ndk {
-                print("📦 [HomeView] ndk.signer = \(ndk.signer != nil ? "Available" : "NIL")")
-                // Create data source if not already created
-                if notesDataSource == nil {
-                    notesDataSource = SessionNotesDataSource(ndk: ndk)
-                }
+            let ndk = ndkManager.ndk
+            print("📦 [HomeView] ndk.signer = \(ndk.signer != nil ? "Available" : "NIL")")
+            // Create data source if not already created
+            if notesDataSource == nil {
+                notesDataSource = SessionNotesDataSource(ndk: ndk)
             }
         }
         .task {
@@ -348,7 +347,7 @@ struct ChatRowView: View {
     let onAvatarTap: () -> Void
     
     @Environment(NDKManager.self) var ndkManager
-    @State private var profile: NDKUserProfile?
+    @State private var metadata: NDKUserMetadata?
     @State private var isPressed = false
     @State private var profileTask: Task<Void, Never>?
     @State private var replyInfo: ReplyTracker.ReplyInfo?
@@ -369,9 +368,9 @@ struct ChatRowView: View {
                 // Avatar section
                 Button(action: onAvatarTap) {
                     EnhancedAvatarView(
-                        url: profile?.picture.flatMap { URL(string: $0) },
+                        url: metadata?.picture.flatMap { URL(string: $0) },
                         size: 52,
-                        fallbackText: String(profile?.name?.prefix(1) ?? "?").uppercased(),
+                        fallbackText: String(metadata?.name?.prefix(1) ?? "?").uppercased(),
                         showOnlineIndicator: false
                     )
                 }
@@ -382,7 +381,7 @@ struct ChatRowView: View {
                 // Content section
                 VStack(alignment: .leading, spacing: 4) {
                     HStack(alignment: .firstTextBaseline, spacing: 8) {
-                        Text(profile?.displayName ?? profile?.name ?? "Unknown")
+                        Text(metadata?.displayName ?? metadata?.name ?? "Unknown")
                             .font(.system(size: 16, weight: .semibold))
                             .foregroundColor(.primary)
                             .lineLimit(1)
@@ -414,8 +413,8 @@ struct ChatRowView: View {
                         // Following repliers avatars
                         if !info.followingRepliers.isEmpty {
                             HStack(spacing: -8) {
-                                ForEach(Array(info.followingRepliers.prefix(3).enumerated()), id: \.offset) { index, replierProfile in
-                                    if let avatarURL = replierProfile.picture, let url = URL(string: avatarURL) {
+                                ForEach(Array(info.followingRepliers.prefix(3).enumerated()), id: \.offset) { index, replierMetadata in
+                                    if let avatarURL = replierMetadata.picture, let url = URL(string: avatarURL) {
                                         AsyncImage(url: url) { image in
                                             image
                                                 .resizable()
@@ -487,17 +486,18 @@ struct ChatRowView: View {
                 showContent = true
             }
             
-            // Start observing profile if we don't have it yet
-            if profile == nil, let ndk = ndkManager.ndk {
+            // Start observing metadata if we don't have it yet
+            if metadata == nil {
+                let ndk = ndkManager.ndk
                 profileTask = Task {
-                    let profileStream = await ndk.profileManager.observe(for: event.pubkey, maxAge: TimeConstants.hour)
+                    let profileStream = await ndk.profileManager.subscribe(for: event.pubkey, maxAge: TimeConstants.hour)
                     
-                    for await profileUpdate in profileStream {
-                        if let profile = profileUpdate {
+                    for await metadataUpdate in profileStream {
+                        if let metadata = metadataUpdate {
                             await MainActor.run {
-                                self.profile = profile
+                                self.metadata = metadata
                             }
-                            // We only need the first valid profile for the list view
+                            // We only need the first valid metadata for the list view
                             break
                         }
                     }

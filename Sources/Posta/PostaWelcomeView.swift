@@ -2,9 +2,7 @@ import SwiftUI
 import NDKSwift
 
 struct PostaWelcomeView: View {
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
-    @Environment(RelayManager.self) var relayManager
     @Environment(\.colorScheme) private var colorScheme
     
     // Animation states
@@ -198,10 +196,10 @@ struct PostaWelcomeView: View {
             animateWelcome()
         }
         .sheet(isPresented: $showCreateAccount) {
-            CreateAccountSheet(authManager: authManager, ndkManager: ndkManager)
+            CreateAccountSheet(ndkManager: ndkManager)
         }
         .sheet(isPresented: $showImportAccount) {
-            ImportAccountSheet(authManager: authManager, ndkManager: ndkManager, loginMethod: $loginMethod)
+            ImportAccountSheet(ndkManager: ndkManager, loginMethod: $loginMethod)
         }
     }
     
@@ -321,7 +319,6 @@ struct WelcomeElectricFieldView: View {
 
 // MARK: - Create Account Sheet
 struct CreateAccountSheet: View {
-    let authManager: NDKAuthManager
     let ndkManager: NDKManager
     @Environment(\.dismiss) private var dismiss
     @State private var isLoading = false
@@ -465,7 +462,11 @@ struct CreateAccountSheet: View {
         
         do {
             let signer = try NDKPrivateKeySigner.generate()
-            _ = try await authManager.createSession(with: signer)
+            let ndk = ndkManager.ndk
+            guard let authManager = ndkManager.authManager else {
+                throw NSError(domain: "AuthManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Auth manager not initialized"])
+            }
+            _ = try await authManager.addSession(signer)
             showSuccess = true
         } catch {
             errorMessage = "Failed to create account: \(error.localizedDescription)"
@@ -499,7 +500,6 @@ struct FeatureRow: View {
 
 // MARK: - Import Account Sheet
 struct ImportAccountSheet: View {
-    let authManager: NDKAuthManager
     let ndkManager: NDKManager
     @Binding var loginMethod: PostaWelcomeView.LoginMethod
     @Environment(\.dismiss) private var dismiss
@@ -724,9 +724,7 @@ struct ImportAccountSheet: View {
                 }
                 
             case .nip46:
-                guard let ndk = ndkManager.ndk else {
-                    throw AuthError.ndkNotInitialized
-                }
+                let ndk = ndkManager.ndk
                 
                 if loginInput.starts(with: "bunker://") {
                     guard let connectionToken = extractConnectionToken(from: loginInput) else {
@@ -740,7 +738,11 @@ struct ImportAccountSheet: View {
                 }
             }
             
-            _ = try await authManager.createSession(with: signer)
+            let ndk = ndkManager.ndk
+            guard let authManager = ndkManager.authManager else {
+                throw NSError(domain: "AuthManager", code: 0, userInfo: [NSLocalizedDescriptionKey: "Auth manager not initialized"])
+            }
+            _ = try await authManager.addSession(signer)
             
         } catch {
             switch loginMethod {
@@ -823,7 +825,5 @@ private func extractConnectionToken(from bunkerUrl: String) -> String? {
 
 #Preview {
     PostaWelcomeView()
-        .environment(NDKAuthManager.shared)
         .environment(NDKManager.shared)
-        .environment(RelayManager())
 }

@@ -6,7 +6,7 @@ options:
 settings:
   base:
     # Code Signing Settings - Update these with your values
-    DEVELOPMENT_TEAM: "456SHKPP26"
+    DEVELOPMENT_TEAM: "6VZ4NHWMQN"
     CODE_SIGN_STYLE: Automatic
     CODE_SIGN_IDENTITY: "Apple Development"
     PROVISIONING_PROFILE_SPECIFIER: ""
@@ -17,8 +17,7 @@ settings:
     CURRENT_PROJECT_VERSION: "2"
 packages:
   NDKSwift:
-    url: https://github.com/pablof7z/NDKSwift
-    branch: master
+    path: ../NDKSwift
 targets:
   Posta:
     type: application

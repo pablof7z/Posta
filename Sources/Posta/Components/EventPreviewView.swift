@@ -64,7 +64,7 @@ struct EventPreviewView: View {
     }
     
     private func loadEvent() {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         eventTask = Task {
             do {
@@ -83,12 +83,11 @@ struct EventPreviewView: View {
                 
                 // Create filter for this specific event
                 let filter = NDKFilter(
-                    ids: [eventId],
-                    limit: 1
+                    ids: [eventId]
                 )
                 
                 // Use observe with maxAge > 0 to fetch and close
-                let dataSource = ndk.observe(filter: filter, maxAge: 300) // 5 min cache
+                let dataSource = ndk.subscribe(filter: filter, maxAge: 300) // 5 min cache
                 
                 for await fetchedEvent in dataSource.events {
                     await MainActor.run {
@@ -119,7 +118,7 @@ struct TextNotePreview: View {
     let event: NDKEvent
     
     @Environment(NDKManager.self) var ndkManager
-    @State private var profile: NDKUserProfile?
+    @State private var metadata: NDKUserMetadata?
     @State private var profileTask: Task<Void, Never>?
     
     var body: some View {
@@ -127,7 +126,7 @@ struct TextNotePreview: View {
             // Author info
             HStack(spacing: 8) {
                 // Avatar
-                if let avatarURL = profile?.picture, let url = URL(string: avatarURL) {
+                if let avatarURL = metadata?.picture, let url = URL(string: avatarURL) {
                     AsyncImage(url: url) { image in
                         image
                             .resizable()
@@ -143,18 +142,18 @@ struct TextNotePreview: View {
                         .fill(Color(.tertiarySystemFill))
                         .frame(width: 32, height: 32)
                         .overlay(
-                            Text(String(profile?.name?.prefix(1) ?? "?").uppercased())
+                            Text(String(metadata?.name?.prefix(1) ?? "?").uppercased())
                                 .font(.caption)
                                 .foregroundColor(.secondary)
                         )
                 }
                 
                 VStack(alignment: .leading, spacing: 0) {
-                    Text(profile?.displayName ?? profile?.name ?? "Unknown")
+                    Text(metadata?.displayName ?? metadata?.name ?? "Unknown")
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
-                    Text("@\(profile?.name ?? String(event.pubkey.prefix(8)))")
+                    Text("@\(metadata?.name ?? String(event.pubkey.prefix(8)))")
                         .font(.caption)
                         .foregroundColor(.secondary)
                 }
@@ -211,15 +210,15 @@ struct TextNotePreview: View {
     }
     
     private func loadProfile() {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         profileTask = Task {
-            let profileStream = await ndk.profileManager.observe(for: event.pubkey, maxAge: TimeConstants.hour)
+            let profileStream = await ndk.profileManager.subscribe(for: event.pubkey, maxAge: TimeConstants.hour)
             
-            for await profile in profileStream {
-                if let profile = profile {
+            for await metadata in profileStream {
+                if let metadata = metadata {
                     await MainActor.run {
-                        self.profile = profile
+                        self.metadata = metadata
                     }
                     break
                 }

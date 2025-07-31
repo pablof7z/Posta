@@ -3,13 +3,12 @@ import NDKSwift
 import NDKSwiftUI
 
 struct ContentView: View {
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
     @State private var hasCompletedWelcome = UserDefaults.standard.bool(forKey: "hasCompletedWelcome")
     
     var body: some View {
         Group {
-            if authManager.isAuthenticated {
+            if ndkManager.isAuthenticated {
                 // Authenticated content
                 MainTabView()
             } else if !hasCompletedWelcome {
@@ -54,7 +53,5 @@ struct MainTabView: View {
 
 #Preview {
     ContentView()
-        .environment(NDKAuthManager.shared)
         .environment(NDKManager.shared)
-        .environment(RelayManager())
 }

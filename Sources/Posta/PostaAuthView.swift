@@ -2,9 +2,7 @@ import SwiftUI
 import NDKSwift
 
 struct PostaAuthView: View {
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
-    @Environment(RelayManager.self) var relayManager
     @State private var loginInput: String = ""
     @State private var isLoading = false
     @State private var errorMessage: String?
@@ -163,9 +161,7 @@ struct PostaAuthView: View {
                 }
                 
             case .nip46:
-                guard let ndk = ndkManager.ndk else {
-                    throw AuthError.ndkNotInitialized
-                }
+                let ndk = ndkManager.ndk
                 
                 // Initialize bunker signer
                 if loginInput.starts(with: "bunker://") {
@@ -181,8 +177,11 @@ struct PostaAuthView: View {
                 }
             }
             
-            // Create session with the signer
-            _ = try await authManager.createSession(with: signer)
+            // Add session to auth manager
+            guard let authManager = ndkManager.authManager else {
+                throw AuthError.authManagerNotInitialized
+            }
+            _ = try await authManager.addSession(signer)
             
         } catch {
             switch loginMethod {
@@ -204,8 +203,11 @@ struct PostaAuthView: View {
             // Generate new private key
             let signer = try NDKPrivateKeySigner.generate()
             
-            // Create session with the new signer
-            _ = try await authManager.createSession(with: signer)
+            // Add session to auth manager
+            guard let authManager = ndkManager.authManager else {
+                throw AuthError.authManagerNotInitialized
+            }
+            _ = try await authManager.addSession(signer)
             
         } catch {
             errorMessage = "Failed to create account"
@@ -218,6 +220,7 @@ struct PostaAuthView: View {
 enum AuthError: Error {
     case invalidBunkerUrl
     case ndkNotInitialized
+    case authManagerNotInitialized
 }
 
 // Helper function to extract connection token from bunker URL
@@ -244,7 +247,5 @@ private func extractConnectionToken(from bunkerUrl: String) -> String? {
 
 #Preview {
     PostaAuthView()
-        .environment(NDKAuthManager.shared)
         .environment(NDKManager.shared)
-        .environment(RelayManager())
 }

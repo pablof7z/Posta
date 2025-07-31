@@ -7,7 +7,7 @@ struct ProfileView: View {
     @Environment(NDKManager.self) var ndkManager
     @Environment(\.dismiss) private var dismiss
     
-    @State private var profile: NDKUserProfile?
+    @State private var metadata: NDKUserMetadata?
     @State private var notes: [NDKEvent] = []
     @State private var isLoadingProfile = false
     @State private var isLoadingNotes = false
@@ -107,7 +107,7 @@ struct ProfileView: View {
         }
         .sheet(isPresented: $showingQRCode) {
             if let pubkey = displayPubkey.isEmpty ? nil : displayPubkey {
-                QRCodeView(pubkey: pubkey, profile: profile)
+                QRCodeView(pubkey: pubkey, metadata: metadata)
             }
         }
         .alert("Log Out", isPresented: $showingLogoutConfirmation) {
@@ -126,7 +126,7 @@ struct ProfileView: View {
         ZStack(alignment: .bottom) {
             // Banner with parallax effect
             GeometryReader { geometry in
-                if let banner = profile?.banner, let url = URL(string: banner) {
+                if let banner = metadata?.banner, let url = URL(string: banner) {
                     AsyncImage(url: url) { image in
                         image
                             .resizable()
@@ -201,7 +201,7 @@ struct ProfileView: View {
     
     private var avatarView: some View {
         EnhancedAvatarView(
-            url: profile?.picture.flatMap { URL(string: $0) },
+            url: metadata?.picture.flatMap { URL(string: $0) },
             size: 120,
             fallbackText: avatarInitial,
             showOnlineIndicator: false
@@ -224,7 +224,7 @@ struct ProfileView: View {
     }
     
     private var avatarInitial: String {
-        let name = profile?.displayName ?? profile?.name ?? "?"
+        let name = metadata?.displayName ?? metadata?.name ?? "?"
         return String(name.prefix(1)).uppercased()
     }
     
@@ -232,11 +232,11 @@ struct ProfileView: View {
         VStack(alignment: .leading, spacing: 8) {
             HStack {
                 VStack(alignment: .leading, spacing: 4) {
-                    Text(profile?.displayName ?? profile?.name ?? "Unknown")
+                    Text(metadata?.displayName ?? metadata?.name ?? "Unknown")
                         .font(.title)
                         .fontWeight(.bold)
                     
-                    if let nip05 = profile?.nip05 {
+                    if let nip05 = metadata?.nip05 {
                         Label(nip05, systemImage: "checkmark.seal.fill")
                             .font(.caption)
                             .foregroundColor(.secondary)
@@ -247,7 +247,7 @@ struct ProfileView: View {
             }
             .padding(.top, 60)
             
-            if let about = profile?.about, !about.isEmpty {
+            if let about = metadata?.about, !about.isEmpty {
                 Text(about)
                     .font(.body)
                     .foregroundColor(.primary.opacity(0.9))
@@ -374,7 +374,7 @@ struct ProfileView: View {
             } else {
                 LazyVStack(spacing: 0) {
                     ForEach(notes, id: \.id) { note in
-                        NoteRowView(note: note, profile: profile)
+                        NoteRowView(note: note, metadata: metadata)
                         
                         if note.id != notes.last?.id {
                             Divider()
@@ -443,16 +443,15 @@ struct ProfileView: View {
     }
     
     private func loadStats() async {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         // Load follow count
         let followFilter = NDKFilter(
             authors: [displayPubkey],
-            kinds: [EventKind.contacts],
-            limit: 1
+            kinds: [EventKind.contacts]
         )
         
-        let dataSource = ndk.observe(filter: followFilter, maxAge: 3600)
+        let dataSource = ndk.subscribe(filter: followFilter, maxAge: 3600)
         
         for await event in dataSource.events {
             let follows = event.tags.filter { $0.count >= 1 && $0[0] == "p" }.count
@@ -467,33 +466,24 @@ struct ProfileView: View {
     }
     
     private func loadProfile() async {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         isLoadingProfile = true
         profileError = nil
         
-        let filter = NDKFilter(
-            authors: [displayPubkey],
-            kinds: [0],
-            limit: 1
-        )
-        
-        let dataSource = ndk.observe(filter: filter, maxAge: 3600) // Cache for 1 hour
-        
-        // Wait for first event
-        for await event in dataSource.events {
-            if let profileData = event.content.data(using: .utf8) {
-                profile = JSONCoding.safeDecode(NDKUserProfile.self, from: profileData)
-                isLoadingProfile = false
-                break // Only need the first/latest profile
+        for await metadata in await ndk.profileManager.subscribe(for: displayPubkey, maxAge: 3600) {
+            await MainActor.run {
+                self.metadata = metadata
+                self.isLoadingProfile = false
             }
+            break // Just get the first result
         }
         
         isLoadingProfile = false
     }
     
     private func loadNotes() async {
-        guard let ndk = ndkManager.ndk else { return }
+        let ndk = ndkManager.ndk
         
         isLoadingNotes = true
         notesError = nil
@@ -504,7 +494,7 @@ struct ProfileView: View {
             limit: 50
         )
         
-        let dataSource = ndk.observe(filter: filter, maxAge: 300) // Cache for 5 minutes
+        let dataSource = ndk.subscribe(filter: filter, maxAge: 300) // Cache for 5 minutes
         
         // Collect initial batch of notes
         var collectedNotes: [NDKEvent] = []
@@ -524,14 +514,13 @@ struct ProfileView: View {
         isLoggingOut = true
         
         // Clear cache if available
-        if let cache = ndkManager.ndk?.cache {
-            try? await cache.clear()
-        }
+        let cache = ndkManager.ndk.cache
+        try? await cache.clear()
         
         // CRITICAL: Delete all sessions from keychain to prevent resurrection on app restart
         // This follows section 2.1 of NDKSWIFT-EXPERT-PROMPT.md
         for session in authManager.availableSessions {
-            try? await authManager.deleteSession(session)
+            try? await authManager.removeSession(session)
         }
         
         // Clear memory state
@@ -561,12 +550,12 @@ struct StatView: View {
 
 struct NoteRowView: View {
     let note: NDKEvent
-    let profile: NDKUserProfile?
+    let metadata: NDKUserMetadata?
     
     var body: some View {
         HStack(alignment: .top, spacing: 12) {
             // Small avatar
-            if let picture = profile?.picture, let url = URL(string: picture) {
+            if let picture = metadata?.picture, let url = URL(string: picture) {
                 AsyncImage(url: url) { image in
                     image
                         .resizable()
@@ -585,7 +574,7 @@ struct NoteRowView: View {
             
             VStack(alignment: .leading, spacing: 4) {
                 HStack {
-                    Text(profile?.displayName ?? profile?.name ?? "Unknown")
+                    Text(metadata?.displayName ?? metadata?.name ?? "Unknown")
                         .font(.subheadline)
                         .fontWeight(.medium)
                     
@@ -611,13 +600,13 @@ struct NoteRowView: View {
 
 struct QRCodeView: View {
     let pubkey: String
-    let profile: NDKUserProfile?
+    let metadata: NDKUserMetadata?
     @Environment(\.dismiss) private var dismiss
     
     var body: some View {
         NavigationView {
             VStack(spacing: 20) {
-                Text(profile?.displayName ?? profile?.name ?? "User")
+                Text(metadata?.displayName ?? metadata?.name ?? "User")
                     .font(.title2)
                     .fontWeight(.semibold)
                 

@@ -8,7 +8,7 @@ import Observation
 class ReplyTracker {
     struct ReplyInfo {
         let totalCount: Int
-        let followingRepliers: [NDKUserProfile]
+        let followingRepliers: [NDKUserMetadata]
         let lastUpdated: Date
     }
     
@@ -44,11 +44,11 @@ class ReplyTracker {
                 tags: ["e": Set([eventId])]
             )
             
-            let dataSource = ndk.observe(filter: replyFilter, maxAge: 300) // 5 min cache
+            let dataSource = ndk.subscribe(filter: replyFilter, maxAge: 300) // 5 min cache
             
             var replyCount = 0
             var seenRepliers = Set<String>()
-            var followingReplierProfiles: [NDKUserProfile] = []
+            var followingReplierMetadata: [NDKUserMetadata] = []
             
             for await reply in dataSource.events {
                 // Check if this is a direct reply (last "e" tag)
@@ -65,19 +65,19 @@ class ReplyTracker {
                         seenRepliers.insert(reply.pubkey)
                         
                         // Fetch profile (with caching via profileManager)
-                        let profileStream = await ndk.profileManager.observe(for: reply.pubkey, maxAge: TimeConstants.hour)
-                        for await profile in profileStream {
-                            if let profile = profile {
-                                followingReplierProfiles.append(profile)
+                        let profileStream = await ndk.profileManager.subscribe(for: reply.pubkey, maxAge: TimeConstants.hour)
+                        for await metadata in profileStream {
+                            if let metadata = metadata {
+                                followingReplierMetadata.append(metadata)
                             }
-                            break // Only need the first profile
+                            break // Only need the first metadata
                         }
                     }
                     
                     // Update cache
                     let info = ReplyInfo(
                         totalCount: replyCount,
-                        followingRepliers: followingReplierProfiles.sorted { 
+                        followingRepliers: followingReplierMetadata.sorted { 
                             ($0.name ?? "") < ($1.name ?? "") 
                         },
                         lastUpdated: Date()

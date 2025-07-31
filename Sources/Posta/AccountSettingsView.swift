@@ -2,7 +2,7 @@ import SwiftUI
 import NDKSwift
 
 struct AccountSettingsView: View {
-    @Environment(NDKAuthManager.self) var authManager
+    @Environment(NDKManager.self) var ndkManager
     @State private var showingAddAccount = false
     @State private var showingDeleteConfirmation = false
     @State private var sessionToDelete: NDKSession?
@@ -12,13 +12,13 @@ struct AccountSettingsView: View {
         List {
             // Current Sessions
             Section("My Accounts") {
-                ForEach(authManager.availableSessions, id: \.id) { session in
+                ForEach(ndkManager.authManager?.availableSessions ?? [], id: \.id) { session in
                     SessionRow(
                         session: session,
-                        isActive: session.id == authManager.activeSession?.id,
+                        isActive: session.id == ndkManager.authManager?.activeSession?.id,
                         onTap: {
                             Task {
-                                try? await authManager.switchToSession(session)
+                                try? await ndkManager.authManager?.switchToSession(session)
                             }
                         },
                         onDelete: {
@@ -41,10 +41,10 @@ struct AccountSettingsView: View {
             }
             
             // Sign Out
-            if authManager.activeSession != nil {
+            if ndkManager.authManager?.activeSession != nil {
                 Section {
                     Button(action: {
-                        authManager.logout()
+                        ndkManager.authManager?.logout()
                         dismiss()
                     }) {
                         HStack {
@@ -67,7 +67,7 @@ struct AccountSettingsView: View {
             Button("Delete", role: .destructive) {
                 if let session = sessionToDelete {
                     Task {
-                        try? await authManager.deleteSession(session)
+                        try? await ndkManager.authManager?.removeSession(session)
                     }
                 }
             }
@@ -87,7 +87,7 @@ struct SessionRow: View {
         HStack {
             VStack(alignment: .leading) {
                 HStack {
-                    Text(session.profileName ?? String(session.pubkey.prefix(8)) + "...")
+                    Text(String(session.pubkey.prefix(8)) + "...")
                         .font(.headline)
                     if isActive {
                         Image(systemName: "checkmark.circle.fill")
@@ -100,7 +100,7 @@ struct SessionRow: View {
                     Image(systemName: session.signerType == "bunker" ? "lock.shield.fill" : "key.fill")
                         .font(.caption2)
                         .foregroundColor(.secondary)
-                    Text(session.signerType.capitalized)
+                    Text((session.signerType ?? "readonly").capitalized)
                         .font(.caption)
                         .foregroundColor(.secondary)
                     
@@ -131,6 +131,6 @@ struct SessionRow: View {
 #Preview {
     NavigationStack {
         AccountSettingsView()
-            .environment(NDKAuthManager.shared)
+            .environment(NDKManager.shared)
     }
 }

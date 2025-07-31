@@ -5,7 +5,6 @@ struct SettingsView: View {
     @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
     @EnvironmentObject var themeManager: ThemeManager
-    @Environment(RelayManager.self) var relayManager
     
     @State private var showingAbout = false
     @State private var showingProfile = false
@@ -68,13 +67,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading) {
                                 Text("Relays")
                                     .font(.headline)
-                                if let ndk = ndkManager.ndk {
-                                    RelayCountView(ndk: ndk)
-                                } else {
-                                    Text("Not connected")
-                                        .font(.caption)
-                                        .foregroundColor(.secondary)
-                                }
+                                RelayCountView(ndk: ndkManager.ndk)
                             }
                         }
                         .padding(.vertical, 4)
