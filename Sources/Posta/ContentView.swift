@@ -23,7 +23,6 @@ struct ContentView: View {
                 PostaAuthView()
             }
         }
-        .environment(\.ndk, ndkManager.ndk)
     }
 }
 

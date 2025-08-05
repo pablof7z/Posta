@@ -142,7 +142,7 @@ struct ThreadView: View {
             // Reply target indicator with animation
             if let target = replyingTo {
                 HStack {
-                    ProfileLoader(pubkey: target.pubkey) { metadata in
+                    ProfileLoader(ndk: ndkManager.ndk, pubkey: target.pubkey) { metadata in
                         HStack(spacing: 4) {
                             Image(systemName: "arrow.turn.up.right")
                                 .font(.system(size: 12))
@@ -350,7 +350,7 @@ struct ThreadEventView: View {
     @Environment(NDKManager.self) var ndkManager
     
     var body: some View {
-        ProfileLoader(pubkey: event.pubkey) { metadata in
+        ProfileLoader(ndk: ndkManager.ndk, pubkey: event.pubkey) { metadata in
             VStack(alignment: .leading, spacing: 12) {
                 // Author info
                 HStack(alignment: .top, spacing: 12) {
@@ -454,7 +454,7 @@ struct ThreadReplyView: View {
     @State private var isPressed = false
     
     var body: some View {
-        ProfileLoader(pubkey: event.pubkey) { metadata in
+        ProfileLoader(ndk: ndkManager.ndk, pubkey: event.pubkey) { metadata in
             VStack(alignment: .leading, spacing: 0) {
                 HStack(alignment: .top, spacing: 12) {
                     // Thread line and avatar
