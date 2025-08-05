@@ -240,5 +240,5 @@ struct ComposeView: View {
 
 #Preview {
     ComposeView()
-        .environment(NDKManager.shared)
+        .environment(NDKManager())
 }

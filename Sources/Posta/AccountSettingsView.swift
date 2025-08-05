@@ -131,6 +131,6 @@ struct SessionRow: View {
 #Preview {
     NavigationStack {
         AccountSettingsView()
-            .environment(NDKManager.shared)
+            .environment(NDKManager())
     }
 }

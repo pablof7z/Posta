@@ -6,9 +6,6 @@ import SwiftUI
 @MainActor
 @Observable 
 class NDKManager: ObservableObject {
-    // MARK: - Singleton
-    static let shared = NDKManager()
-    
     // MARK: - Authentication
     private(set) var authManager: NDKAuthManager?
     
@@ -84,7 +81,7 @@ class NDKManager: ObservableObject {
     }
     
     // MARK: - Initialization
-    private init() {
+    init() {
         print("NDKManager - Initializing...")
         
         // Load theme preference

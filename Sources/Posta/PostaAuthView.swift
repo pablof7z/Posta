@@ -247,5 +247,5 @@ private func extractConnectionToken(from bunkerUrl: String) -> String? {
 
 #Preview {
     PostaAuthView()
-        .environment(NDKManager.shared)
+        .environment(NDKManager())
 }

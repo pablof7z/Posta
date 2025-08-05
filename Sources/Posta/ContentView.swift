@@ -52,5 +52,5 @@ struct MainTabView: View {
 
 #Preview {
     ContentView()
-        .environment(NDKManager.shared)
+        .environment(NDKManager())
 }

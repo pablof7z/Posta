@@ -156,7 +156,7 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingProfile) {
                 ProfileView(pubkey: nil)
-                    .environment(NDKManager.shared)
+                    .environment(ndkManager)
             }
         }
         .preferredColorScheme(ndkManager.currentTheme.colorScheme)

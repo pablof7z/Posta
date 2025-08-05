@@ -3,7 +3,7 @@ import NDKSwift
 
 @main
 struct PostaApp: App {
-    @State private var ndkManager = NDKManager.shared
+    @State private var ndkManager = NDKManager()
     
     // Default relays for Posta
     private let defaultRelays = [
@@ -26,7 +26,7 @@ struct PostaApp: App {
     }
     
     private func setupNDK() {
-        // NDKManager.shared already initializes NDK synchronously in its init
+        // NDKManager initializes NDK synchronously in its init
         // No additional setup needed here
     }
 }
