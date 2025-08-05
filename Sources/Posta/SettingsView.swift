@@ -2,9 +2,7 @@ import SwiftUI
 import NDKSwift
 
 struct SettingsView: View {
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
-    @EnvironmentObject var themeManager: ThemeManager
     
     @State private var showingAbout = false
     @State private var showingProfile = false
@@ -24,8 +22,8 @@ struct SettingsView: View {
                                 Text("My Profile")
                                     .font(.headline)
                                     .foregroundColor(.primary)
-                                if let session = authManager.activeSession {
-                                    Text(String(session.pubkey.prefix(8)) + "...")
+                                if let pubkey = ndkManager.authManager?.activePubkey {
+                                    Text(String(pubkey.prefix(8)) + "...")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -46,8 +44,8 @@ struct SettingsView: View {
                             VStack(alignment: .leading) {
                                 Text("Accounts")
                                     .font(.headline)
-                                if authManager.availableSessions.count > 1 {
-                                    Text("\(authManager.availableSessions.count) accounts")
+                                if let sessionCount = ndkManager.authManager?.availableSessions.count, sessionCount > 1 {
+                                    Text("\(sessionCount) accounts")
                                         .font(.caption)
                                         .foregroundColor(.secondary)
                                 }
@@ -76,7 +74,7 @@ struct SettingsView: View {
                 
                 // Appearance Section
                 Section {
-                    NavigationLink(destination: AppearanceSettingsView(themeManager: themeManager)) {
+                    NavigationLink(destination: AppearanceSettingsView(ndkManager: ndkManager)) {
                         HStack {
                             Image(systemName: "paintbrush.fill")
                                 .font(.title2)
@@ -84,7 +82,7 @@ struct SettingsView: View {
                             VStack(alignment: .leading) {
                                 Text("Appearance")
                                     .font(.headline)
-                                Text(themeManager.currentTheme.rawValue)
+                                Text(ndkManager.currentTheme.rawValue)
                                     .font(.caption)
                                     .foregroundColor(.secondary)
                             }
@@ -158,11 +156,10 @@ struct SettingsView: View {
             }
             .sheet(isPresented: $showingProfile) {
                 ProfileView(pubkey: nil)
-                    .environment(authManager)
                     .environment(NDKManager.shared)
             }
         }
-        .preferredColorScheme(themeManager.currentTheme.colorScheme)
+        .preferredColorScheme(ndkManager.currentTheme.colorScheme)
         .onAppear {
             // NDK is now managed centrally
         }

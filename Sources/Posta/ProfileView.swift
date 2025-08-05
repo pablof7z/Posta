@@ -3,7 +3,6 @@ import NDKSwift
 
 struct ProfileView: View {
     let pubkey: String?
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
     @Environment(\.dismiss) private var dismiss
     
@@ -23,11 +22,11 @@ struct ProfileView: View {
     @State private var isLoggingOut = false
     
     private var displayPubkey: String {
-        pubkey ?? authManager.activeSession?.pubkey ?? ""
+        pubkey ?? ndkManager.authManager?.activePubkey ?? ""
     }
     
     private var isOwnProfile: Bool {
-        displayPubkey == authManager.activeSession?.pubkey
+        displayPubkey == ndkManager.authManager?.activePubkey
     }
     
     init(pubkey: String?) {
@@ -267,7 +266,7 @@ struct ProfileView: View {
             }
             
             HStack(spacing: 12) {
-                if displayPubkey != authManager.activeSession?.pubkey {
+                if displayPubkey != ndkManager.authManager?.activePubkey {
                     Button(action: {
                         HapticFeedback.notification(.success)
                         // Toggle follow
@@ -519,13 +518,15 @@ struct ProfileView: View {
         
         // CRITICAL: Delete all sessions from keychain to prevent resurrection on app restart
         // This follows section 2.1 of NDKSWIFT-EXPERT-PROMPT.md
-        for session in authManager.availableSessions {
-            try? await authManager.removeSession(session)
+        if let authManager = ndkManager.authManager {
+            for session in authManager.availableSessions {
+                try? await authManager.removeSession(session)
+            }
         }
         
         // Clear memory state
         await MainActor.run {
-            authManager.logout()
+            ndkManager.authManager?.logout()
             isLoggingOut = false
             dismiss()
         }

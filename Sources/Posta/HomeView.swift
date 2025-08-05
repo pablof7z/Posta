@@ -2,7 +2,6 @@ import SwiftUI
 import NDKSwift
 
 struct HomeView: View {
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(NDKManager.self) var ndkManager
     @State private var selectedProfile: String?
     @State private var selectedThread: NDKEvent?
@@ -163,8 +162,8 @@ struct HomeView: View {
                     
                     // Profile button with gradient
                     Button(action: {
-                        if let activeSession = authManager.activeSession {
-                            selectedProfile = activeSession.pubkey
+                        if let pubkey = ndkManager.authManager?.activePubkey {
+                            selectedProfile = pubkey
                         }
                     }) {
                         ZStack {

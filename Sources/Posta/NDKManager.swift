@@ -1,6 +1,7 @@
 import Foundation
 import NDKSwift
 import Observation
+import SwiftUI
 
 @MainActor
 @Observable 
@@ -44,6 +45,34 @@ class NDKManager: ObservableObject {
     private var profileObservationTask: Task<Void, Never>?
     private var relayMonitorTask: Task<Void, Never>?
     
+    // MARK: - Theme Management
+    enum Theme: String, CaseIterable {
+        case system = "System"
+        case light = "Light"
+        case dark = "Dark"
+        
+        var colorScheme: ColorScheme? {
+            switch self {
+            case .system:
+                return nil
+            case .light:
+                return .light
+            case .dark:
+                return .dark
+            }
+        }
+    }
+    
+    private(set) var currentTheme: Theme = .system {
+        didSet {
+            UserDefaults.standard.set(currentTheme.rawValue, forKey: "app_theme")
+        }
+    }
+    
+    func setTheme(_ theme: Theme) {
+        currentTheme = theme
+    }
+    
     // MARK: - Computed Properties
     var isAuthenticated: Bool {
         authManager?.isAuthenticated ?? false
@@ -57,6 +86,13 @@ class NDKManager: ObservableObject {
     // MARK: - Initialization
     private init() {
         print("NDKManager - Initializing...")
+        
+        // Load theme preference
+        if let savedTheme = UserDefaults.standard.string(forKey: "app_theme"),
+           let theme = Theme(rawValue: savedTheme) {
+            self.currentTheme = theme
+        }
+        
         // Initialize NDK synchronously with empty relays
         ndk = NDK(relayUrls: [])
         

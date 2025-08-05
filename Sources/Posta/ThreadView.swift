@@ -5,7 +5,6 @@ struct ThreadView: View {
     let rootEvent: NDKEvent
     
     @Environment(NDKManager.self) var ndkManager
-    @Environment(NDKAuthManager.self) var authManager
     @Environment(\.dismiss) var dismiss
     
     @State private var replies: [NDKEvent] = []
@@ -299,7 +298,7 @@ struct ThreadView: View {
     
     private func sendReply() {
         let ndk = ndkManager.ndk
-        guard let signer = authManager.activeSigner,
+        guard let signer = ndkManager.authManager?.activeSigner,
               !replyText.isEmpty else { return }
         
         Task {

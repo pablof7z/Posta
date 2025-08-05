@@ -1,25 +1,25 @@
 import SwiftUI
+import NDKSwift
 
 struct AppearanceSettingsView: View {
-    @ObservedObject var themeManager: ThemeManager
-    @State private var selectedTheme: ThemeManager.Theme
+    @Environment(NDKManager.self) var ndkManager
+    @State private var selectedTheme: NDKManager.Theme
     
-    init(themeManager: ThemeManager) {
-        self.themeManager = themeManager
-        self._selectedTheme = State(initialValue: themeManager.currentTheme)
+    init(ndkManager: NDKManager) {
+        self._selectedTheme = State(initialValue: ndkManager.currentTheme)
     }
     
     var body: some View {
         List {
             // Theme Selection
             Section("Theme") {
-                ForEach(ThemeManager.Theme.allCases, id: \.self) { theme in
+                ForEach(NDKManager.Theme.allCases, id: \.self) { theme in
                     ThemeRow(
                         theme: theme,
                         isSelected: selectedTheme == theme,
                         onSelect: {
                             selectedTheme = theme
-                            themeManager.currentTheme = theme
+                            ndkManager.setTheme(theme)
                         }
                     )
                 }
@@ -114,7 +114,7 @@ struct AppearanceSettingsView: View {
 }
 
 struct ThemeRow: View {
-    let theme: ThemeManager.Theme
+    let theme: NDKManager.Theme
     let isSelected: Bool
     let onSelect: () -> Void
     

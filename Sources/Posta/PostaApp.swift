@@ -4,7 +4,6 @@ import NDKSwift
 @main
 struct PostaApp: App {
     @State private var ndkManager = NDKManager.shared
-    @StateObject private var themeManager = ThemeManager()
     
     // Default relays for Posta
     private let defaultRelays = [
@@ -19,8 +18,7 @@ struct PostaApp: App {
         WindowGroup {
             ContentView()
                 .environment(ndkManager)
-                .environmentObject(themeManager)
-                .preferredColorScheme(themeManager.currentTheme.colorScheme)
+                .preferredColorScheme(ndkManager.currentTheme.colorScheme)
                 .onAppear {
                     setupNDK()
                 }

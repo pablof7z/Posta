@@ -27,7 +27,6 @@
 		716C31946AD210A3F883C0A6 /* MessageCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = C6ECDBBABE75BAD50D391D63 /* MessageCard.swift */; };
 		724D3774AD60E792300AD9A5 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 57E4286C68B29F1067E1E5E9 /* SettingsView.swift */; };
 		793BF367E112F49D7A3168CD /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = 473DF610696C7C8D6BE3D7C9 /* Assets.xcassets */; };
-		81A513C4F226861819FD14C8 /* ThemeManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = 409933079609CEDCF33B802B /* ThemeManager.swift */; };
 		8835C6AD388752C014D2172E /* LoadingDots.swift in Sources */ = {isa = PBXBuildFile; fileRef = 87FCDB73A3B5239DAC55969C /* LoadingDots.swift */; };
 		97F3E22EF9E861D4B667126F /* HapticFeedback.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5ECF4C7D65C2B2F19A8DB993 /* HapticFeedback.swift */; };
 		9B0BB37D975DC528DAF44ECF /* LaunchScreen.storyboard in Resources */ = {isa = PBXBuildFile; fileRef = 0E1C662710FBEF7F41C5E825 /* LaunchScreen.storyboard */; };
@@ -61,7 +60,6 @@
 		2402EEA1C73D8BE080722363 /* EventPreviewView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = EventPreviewView.swift; sourceTree = "<group>"; };
 		328D71639B7B8A43731FD93B /* AsyncContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AsyncContentView.swift; sourceTree = "<group>"; };
 		337E36311AB841CE15B215F3 /* Posta.app */ = {isa = PBXFileReference; includeInIndex = 0; lastKnownFileType = wrapper.application; path = Posta.app; sourceTree = BUILT_PRODUCTS_DIR; };
-		409933079609CEDCF33B802B /* ThemeManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ThemeManager.swift; sourceTree = "<group>"; };
 		41A802FB194F271DB550DC50 /* AnimatedBackgroundView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnimatedBackgroundView.swift; sourceTree = "<group>"; };
 		473DF610696C7C8D6BE3D7C9 /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		49A90AAD5FC23A2B0F94BDC7 /* RelaySettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RelaySettingsView.swift; sourceTree = "<group>"; };
@@ -190,7 +188,6 @@
 				1FBCB498E0CEBC16BA3A59D6 /* ReplyTracker.swift */,
 				57E4286C68B29F1067E1E5E9 /* SettingsView.swift */,
 				1582DA2D0964FB86FFD22737 /* SplashView.swift */,
-				409933079609CEDCF33B802B /* ThemeManager.swift */,
 				DB1F484FFC62DD699207A5BB /* ThreadView.swift */,
 				B88397F1C4B9DC130C6BF474 /* VisualEffectBlur.swift */,
 				84E86EC599746E3CC50353F4 /* Components */,
@@ -320,7 +317,6 @@
 				724D3774AD60E792300AD9A5 /* SettingsView.swift in Sources */,
 				1089942926B933752761F2EF /* SplashView.swift in Sources */,
 				1A1C263ADEC94A9D4EDE9ED5 /* TabButton.swift in Sources */,
-				81A513C4F226861819FD14C8 /* ThemeManager.swift in Sources */,
 				4D6ADD01EECC9EA78723EB06 /* ThreadView.swift in Sources */,
 				2C05F20FAA0F92B19080AB15 /* ViewModifiers.swift in Sources */,
 				C772C3F6D82904629A951F59 /* VisualEffectBlur.swift in Sources */,
